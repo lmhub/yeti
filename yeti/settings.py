@@ -131,8 +131,12 @@ MIDDLEWARE_CLASSES = (
     # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
 
+#Uncomment this section to enable authentication of 
+MIDDLEWARE_CLASSES = MIDDLEWARE_CLASSES + ('auth_middleware.SubjectDnAuthMiddleware',)
+
+
 #AUTHENTICATION_BACKENDS = (
-#    'django.contrib.auth.backends.RemoteUserBackend',
+#'django.contrib.auth.backends.RemoteUserBackend',
 #)
 
 
