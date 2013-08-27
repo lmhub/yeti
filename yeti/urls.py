@@ -12,6 +12,7 @@ admin.autodiscover()
 urlpatterns = patterns('',
     url(r'^$', TemplateView.as_view(template_name="index.html")),
     url(r'^admin/', include(admin.site.urls)),
+    url(r'^callTaxiiService/(.*)/?', 'yeti.views.call_taxii_service'),
     url(r'^services/', include('taxii_services.urls')),
     #url(r'^test/', 'taxii_services.views.test')
 )
