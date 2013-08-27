@@ -1,0 +1,46 @@
+<html>
+    <head>
+        <title>Call a TAXII Service Form</title>
+        <script language="Javascript">
+                        //Display name, short name
+            var forms = ['Discovery Request', 'discovery',
+                         'Feed Information Request', 'feed_information',
+                         'Manage Feed Subscription Request', 'manage_subscription',
+                         'Inbox Message', 'inbox',
+                         'Poll Request', 'poll'];
+            
+            function showMsgForm(f)
+            {
+                for (i = 1; i < forms.length; i+=2)
+                {
+                    display = (forms[i] == f ? 'block' : 'none');
+                    document.getElementById(forms[i]).style.display = display;
+                }
+            }
+        </script>
+    </head>
+    <body onload="showMsgForm('ShowNone')">
+        What kind of message would you like to send?<br>
+        <script>
+            document.write('[');
+            for (i = 0; i < forms.length; i+=2)
+            {
+                display_name = forms[i]
+                short_name = forms[i+1]
+                
+                document.write('<a href="/callTaxiiService/' + short_name + '">' + display_name + '</a>');
+                if (i + 2 < forms.length)
+                    document.write(' | ');
+            }
+            document.write(']');
+        </script>
+        <div id="form">
+            <h1>{{ form_title }}</h1>
+            <form action="{{action}}" method="POST">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <input type="Submit" value="Send Message"/>
+            </form>
+        </div>
+    </body>
+</html>

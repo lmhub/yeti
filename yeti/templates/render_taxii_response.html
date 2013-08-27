@@ -1,0 +1,30 @@
+<html>
+    <head>
+        <title>tmp</title>
+    </head>
+    
+    <body>
+    To send another message, click <a href="/callTaxiiService/{{message_type}}">Here</a><br>
+    <hr>
+    The requested URL was:<br>
+    <pre>{{ url }}</pre>
+    
+    The request was:<br>
+    <pre>{{ request_message }}</pre>
+    
+    The response headers were:<br>
+    <pre>{{ info }}</pre>
+
+    The response body was:<br>
+    <!-- <div style="border:1px;overflow-y:hidden;overflow-x:scroll"> -->
+    <pre>{{ pretty_print }}</pre>
+    <!-- </div> -->
+
+    <!-- TODO: Do more on this later
+    The XSLT Transform resulted in: <br>
+    {% autoescape off %}
+    {{ html_print }}
+    {% endautoescape %}
+    -->
+    </body>
+</html>
