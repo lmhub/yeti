@@ -41,18 +41,18 @@ class base_taxii_msg_form(forms.Form):
         passwd = cleaned_data['http_basic_password']
         if user != '' and passwd == '':
             self._errors['http_basic_password'] = self.error_class(['Username was specified but password was empty.'])
-            return cleaned_data
+            #return cleaned_data
         
         if user == '' and passwd != '':
             self._errors['http_basic_username'] = self.error_class(['Password was specified but username was empty.'])
-            return cleaned_data
+            #return cleaned_data
         
         tc = self.cleaned_data['tls_cert']
         tk = self.cleaned_data['tls_key']
         
         if tc is None and tk is not None:
             self._errors['tls_cert'] = self.error_class(['TLS Key was specified, but the TLS Cert was not.'])
-            return cleaned_data
+            #return cleaned_data
         
         if tc is not None and tk is None:
             self._errors['tls_key'] = self.error_class(['TLS Cert was specified, but the TLS Key was not.'])
@@ -181,8 +181,46 @@ class feed_information_request_form(base_taxii_msg_form):
     
 
 class subscription_management_request_form(base_taxii_msg_form):
-    class_name = 'blah4'#TODO: Do this
-
-#TODO: PollRequest
-#TODO: InboxMessage
-#TODO: FeedManagement Items
+    feed_name = forms.CharField(label = 'Feed Name')
+    action = forms.ChoiceField(choices=[(x, x) for x in tm.ACT_TYPES], required=False)
+    subscription_id = forms.CharField(required=False)
+    inbox_protocol = forms.ModelChoiceField(queryset=taxii_services.models.ProtocolBindingId.objects.all(), required=False)
+    inbox_address = forms.CharField(required=False)
+    delivery_message_binding = forms.ModelChoiceField(queryset=taxii_services.models.MessageBindingId.objects.all(), required=False)
+    #TODO: Allow multiple of these
+    content_binding = forms.ModelChoiceField(queryset=taxii_services.models.ContentBindingId.objects.all(), required=False)
+    
+    def clean(self):
+        cleaned_data = super(base_taxii_msg_form, self).clean()
+        action = self.cleaned_data['action']
+        if action == tm.ACT_SUBSCRIBE and self.cleaned_data['subscription_id'] != '':
+            self._errors['subscription_id'] = self.error_class(['When the action is SUBSCRIBE, this field must be empty'])
+        elif (action == tm.ACT_STATUS or action == tm.ACT_UNSUBSCRIBE) and self.cleaned_data['subscription_id'] == '':
+            self._errors['subscription_id'] = self.error_class(['When the action is UNSUBSCRIBE or STATUS, this field must not be empty'])
+        
+        ip = self.cleaned_data['inbox_protocol']
+        ia = self.cleaned_data['inbox_address']
+        dmb = self.cleaned_data['delivery_message_binding']
+        cb = self.cleaned_data['content_binding']
+        
+        if ip == '':#Inbox protocol is empty and all Delivery Parameters should be empty
+            if ia != '' or dmb != '' or cb != '':
+                error = self.error_class(['TODO: replace with a useful error message'])
+                self._errors['inbox_address'] = error
+                self._errors['delivery_message_binding'] = error
+                self._errors['content_binding'] = error
+        else: #Inbox protocol is specified, so all Delivery Parameters should be specified
+            if ia == '' or dmb == '' or cb == '':
+                error = self.error_class(['TODO: replace with a useful error message'])
+                self._errors['inbox_address'] = error
+                self._errors['delivery_message_binding'] = error
+                self._errors['content_binding'] = error
+        
+        return cleaned_data
+    
+    def get_libtaxii_message(self):
+        id = self.cleaned_data['message_id']
+        feed = self.cleaned_data['feed_name']
+        action = self.cleaned_data['action']
+        
+        #Delivery Parameter items
