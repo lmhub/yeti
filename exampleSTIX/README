@@ -1,0 +1,4 @@
+These files are example STIX indicator messages that can be used to test
+the integration with Suricata. 
+
+Note that only the IP Watchlist example works at this time. 
