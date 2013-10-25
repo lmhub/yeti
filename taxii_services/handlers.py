@@ -11,6 +11,12 @@ from taxii_services.utils import make_safe
 import libtaxii as t
 import libtaxii.messages as tm
 
+SURICATA_INTEGRATION = True
+
+if SURICATA_INTEGRATION:
+    import stix_json as sj
+    from suricatasc import *
+
 
 # A set of headers that are utilized by TAXII. These are formatted as Django's
 # HttpRequest.META keys: https://docs.djangoproject.com/en/dev/ref/request-response/#django.http.HttpRequest.REQUEST
@@ -60,6 +66,12 @@ TAXII_MESSAGE_XML_BINDING_ID    = "urn:taxii.mitre.org:message:xml:1.0"
 HTTP_STATUS_OK              = 200
 HTTP_STATUS_SERVER_ERROR    = 500
 HTTP_STATUS_NOT_FOUND       = 400
+
+# Suricata Integration Values
+if SURICATA_INTEGRATION:
+    SURICATA_SOCKET_PATH = "/usr/local/var/run/suricata/suricata-command.socket"
+    SURICATA_INBOX = "default"
+
 
 def create_taxii_response(message, status_code=HTTP_STATUS_OK, use_https=True):
     """Creates a TAXII HTTP Response for a given message and status code"""
@@ -181,6 +193,34 @@ def inbox_add_content(request, inbox_name, taxii_message):
             
             c.save()
             inbox.content_blocks.add(c) # add content block to inbox
+            
+            #NEW_CODE
+            if SURICATA_INTEGRATION:
+                # Forward Content to Suricata Unix socket as JSON
+                if inbox_name == SURICATA_INBOX:
+                    indicators_json = sj.get_indicators_json(c.content)
+                    logger.debug('SURICATA: Content JSON: \r\n%s', indicators_json)
+                    sc = SuricataSC(SURICATA_SOCKET_PATH, True)
+                    try:
+                        sc.connect()
+                        fail = False
+                    except SuricataNetException, err:
+                        logger.debug('SURICATA: Unable to connect to socket %s: %s', SURICATA_SOCKET_PATH, err)
+                        fail = True
+                    except SuricataReturnException, err:
+                        logger.debug('SURICATA: Unable to negotiate version with server: %s', err)
+                        fail = True
+                    if not fail:
+                        try:
+                            cmd_indicators_json = "{\"command\":\"add-indicator\", \"arguments\" : " + indicators_json + "}"
+                            sc.send_string(cmd_indicators_json);
+                        except SuricataNetException, err:
+                            logger.debug('SURICATA: Communication error: %s', err)
+                            fail = True
+                        except SuricataReturnException, err:
+                            logger.debug('SURICATA: Invalid return from server: %s', err)
+                            fail = True
+            #END_NEW_CODE
             
             for data_feed in inbox.data_feeds.all():
                 if content_binding_id in data_feed.supported_content_bindings.all():
